@@ -11,7 +11,7 @@ int* lex_stream;
 int* lex_p;
 int lex_stream_len;
 char* word;   
-char w[] = "1 2 dup + = typ 34";  //пробная входная цепочка
+char w[] = "1 2 dup + = typ 34 ( sdfsdfsd) ffff";  //пробная входная цепочка
 char* c = w;
 
 
