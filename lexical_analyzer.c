@@ -9,8 +9,9 @@
 name** name_table;
 int* lex_stream; 
 int* lex_p;
+int lex_stream_len;
 char* word;   
-char w[] = "11  ses  +  214 8742 saaaas . ";  //пробная входная цепочка
+char w[] = "1 2 dup + = typ 34";  //пробная входная цепочка
 char* c = w;
 
 
@@ -54,6 +55,11 @@ void number_create(enum states state, char r){
 }
 
 void word_create(enum states state, char r){
+    if (state == COMorW){
+        word = add_symbol_to_string(word, '(');
+        c--;
+        return;
+    }
     if (isalpha(r)){
         r = tolower(r);
     }
@@ -62,23 +68,20 @@ void word_create(enum states state, char r){
 }
 
 void number_done(enum states state, char r){
-    *lex_p = atoi(word);
+    name* n = find_name(name_table, word, num, 1);
+    *lex_p = n->value;
     lex_p++;
+    lex_stream_len++;
+    c--;
     memset(word, '\0', strlen(word));
     return;
 }
 
-void arith_sym(enum states state, char r){
-    name* n = find_name(name_table, make_string_from_char(r), 1, id_name);
-    *lex_p = n->value;
-    lex_p++;
-    return; 
-}
-
 void word_done(enum states state, char r){
-    name* n = find_name(name_table, word, 1, id_name);
+    name* n = find_name(name_table, word, id_name, 1);
     *lex_p = n->value;
     lex_p++;
+    lex_stream_len++;
     c--;
     memset(word, '\0', strlen(word));
     return;
@@ -91,25 +94,25 @@ void error(enum states state, char r){
 }
 
 void terminate(enum states state, char r){
-    printf("Input string was successfully recognised, output string: %s \n");
+    printf("Input string was successfully recognised\n");
     int* p = lex_stream;
-    for (int i = 0; i < 6; i++, p++){
+    for (int i = 0; i < lex_stream_len; i++, p++){
         printf("%d, ", *p);
     }
     printf("\n");
-    print_table(name_table);
+    //print_table(name_table);
     free(word);
     exit(0);
 }
 
 
 const struct transition state_transition_table[states_num][input_num] = {
-    [S][number] = {NorW, number_create},
+    [S][number] = {N, number_create},
     [S][letter] = {W, word_create},
     [S][space] = {S, NULL},
     [S][comment_bkt_open] = {COMorW, NULL},
     [S][comment_bkt_close] = {T, NULL},     // добавить обработку ошибки здесь
-    [S][minus] = {NorW, number_create},
+    [S][minus] = {N, number_create},
     [S][other] = {W, word_create},
     [S][exit_symbol] = {T, terminate},
     [S][line_break] = {S, NULL},
@@ -131,33 +134,24 @@ const struct transition state_transition_table[states_num][input_num] = {
     [W][exit_symbol] = {S, word_done},
     [W][line_break] = {S, word_done},
     [W][minus] = {W, word_create},
-    [NorW][number] = {N, number_create},
-    [NorW][letter] = {W, word_create},
-    [NorW][space] = {S, number_done},
-    [NorW][comment_bkt_open] = {W, word_create},
-    [NorW][comment_bkt_close] = {W, word_create},
-    [NorW][other] = {W, word_create},
-    [NorW][exit_symbol] = {S, number_done},
-    [NorW][line_break] = {S, number_done},
-    [NorW][minus] = {W, word_create},
-    [COMorW][number] = {N, number_create},
-    [COMorW][letter] = {ER, error},
-    [COMorW][space] = {S, number_done},
-    [COMorW][comment_bkt_open] = {ER, error},
-    [COMorW][comment_bkt_close] = {ER, error},
-    [COMorW][other] = {ER, error},
-    [COMorW][exit_symbol] = {S, number_done},
-    [COMorW][line_break] = {S, NULL},
-    [COMorW][minus] = {S, NULL},
-    [COM][number] = {N, number_create},
-    [COM][letter] = {ER, error},
-    [COM][space] = {S, number_done},
-    [COM][comment_bkt_open] = {ER, error},
-    [COM][comment_bkt_close] = {ER, error},
-    [COM][other] = {ER, error},
-    [COM][exit_symbol] = {S, number_done},
+    [COMorW][number] = {W, word_create},
+    [COMorW][letter] = {W, word_create},
+    [COMorW][space] = {COM, NULL},
+    [COMorW][comment_bkt_open] = {W, word_create},
+    [COMorW][comment_bkt_close] = {W, word_create},
+    [COMorW][other] = {W, word_create},
+    [COMorW][exit_symbol] = {W, word_create},
+    [COMorW][line_break] = {W, word_create},
+    [COMorW][minus] = {W, word_create},
+    [COM][number] = {COM, NULL},
+    [COM][letter] = {COM, NULL},
+    [COM][space] = {COM, NULL},
+    [COM][comment_bkt_open] = {COM, NULL},
+    [COM][comment_bkt_close] = {S, NULL},
+    [COM][other] = {COM, NULL},
+    [COM][exit_symbol] = {S, NULL},
     [COM][line_break] = {S, NULL},
-    [COM][minus] = {S, NULL},
+    [COM][minus] = {COM, NULL},
     [T][number] = {T, NULL},
     [T][letter] = {T, NULL}, 
     [T][space] = {T, NULL},
@@ -186,9 +180,10 @@ void fill_table_with_key_names(name** table){
 
 void lexical_analyzer(){
     table_size = 40;
+    lex_stream_len = 0;
     name_table = (name**)calloc(table_size, sizeof(name));
     fill_table_with_key_names(name_table);
-    
+
     lex_stream = (int*)calloc(100, sizeof(int));    // ToDo: довыделение памяти 
     lex_p = lex_stream;
     word = (char*)calloc(31, sizeof(char));

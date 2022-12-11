@@ -34,16 +34,16 @@ name *find_name(name** table, char *str, enum name_type type, int insert){
     if (type == key_name){
         nn->value = key_val;
         key_val--;
-        nn->type = word;
+        nn->type = Word;
     }
     else if (type == id_name){
         nn->value = val;
         val++;
-        nn->type = word;
+        nn->type = Word;
     } else{
         nn->value = val;
         val++;
-        nn->type = constant;
+        nn->type = Constant;
     }
     nn->next = table[hi];
     table[hi] = nn;
@@ -55,7 +55,7 @@ void print_table(name** table){
     for (int i  = 1; i < table_size; p = table[i], i++)
     {    
         for(name* n = p; n; n=n->next){
-            printf("%s: %d\n",n->string, n->value);
+            printf("%s: %d \n",n->string, n->value);
         }
     }
 }

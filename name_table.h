@@ -2,8 +2,8 @@
 #define NAME_TABLE_H
 
 enum lexem_type{
-    word,
-    constant
+    Word,
+    Constant
 };
 
 typedef struct name{
@@ -19,7 +19,7 @@ enum name_type
 {
     key_name, 
     id_name,
-    constant
+    num
 };
 
 name* find_name(name** table,char* str, enum name_type type, int insert);

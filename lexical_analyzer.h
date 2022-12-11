@@ -5,7 +5,6 @@ enum states
     S,
     N,
     W,
-    NorW,
     COMorW,
     COM, 
     T,
