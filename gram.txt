@@ -1,0 +1,12 @@
+PROGR->MOP
+MOP->MOP OP
+MOP->OP
+OP->WORD
+OP->begin MOP until
+OP->do MOP loop
+OP->if MOP then
+OP->: WORD MOP ;
+OP->if MOP else MOP then
+WORD-><keyword>
+WORD-><num>
+WORD-><name>
